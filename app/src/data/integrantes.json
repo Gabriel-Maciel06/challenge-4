@@ -1,0 +1,5 @@
+[
+  { "rm": "562795", "nome": "Gabriel Maciel",   "turma": "1TDSR", "avatar": "/src/assets/img/user1.jpg", "github": "https://github.com/Gabriel-Maciel06", "linkedin": "https://www.linkedin.com/in/gabriel-maciel-alves-de-oliveira-8186312a6", "instagram": "https://www.instagram.com/barthelinkbiel?igsh=d3l0MGoybmZvdmNw&utm_source=qr"},
+  { "rm": "563399", "nome": "Matheus Molina",  "turma": "1TDSR", "avatar": "/src/assets/img/user2.jpg", "github": "https://github.com/matheus-molina", "linkedin": "https://www.linkedin.com/in/matheus-molina-4578392b6", "instagram": "https://www.instagram.com/matheus23molina?igsh=MWs3OXppeGF4bHdt" },
+  { "rm": "562254", "nome": "Thomas Fontes",  "turma": "1TDSR", "avatar": "/src/assets/img/user3.jpg", "github": "https://github.com/thomasmfontes", "linkedin": "https://www.linkedin.com/in/thomas-mineu-fontes-8406b2220", "instagram": "https://www.instagram.com/thomas_fontes7" }
+]
