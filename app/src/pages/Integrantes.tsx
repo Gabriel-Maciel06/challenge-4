@@ -11,28 +11,17 @@ export default function Integrantes() {
   const [q, setQ] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("nome");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // Form / modal
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<Integrante | null>(null);
-  const [form, setForm] = useState<Partial<Integrante>>({});
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     // Tenta buscar do backend; se falhar, usa o arquivo local como fallback.
     let mounted = true;
     async function load() {
       setLoading(true);
-      setErrorMsg(null);
       try {
         const res = await api.listIntegrantes();
         if (mounted) setIntegrantes(res || (data as Integrante[]));
       } catch (err: any) {
-        // fallback
-        setErrorMsg(
-          "Não foi possível carregar a API remota. Usando dados locais como fallback. (Defina VITE_API_BASE_URL para apontar à API Java)."
-        );
+        // fallback - usa dados locais silenciosamente
         if (mounted) setIntegrantes(data as Integrante[]);
       } finally {
         if (mounted) setLoading(false);
@@ -44,64 +33,7 @@ export default function Integrantes() {
     };
   }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm({});
-    setFormOpen(true);
-  };
 
-  const openEdit = (it: Integrante) => {
-    setEditing(it);
-    setForm({ ...it });
-    setFormOpen(true);
-  };
-
-  const handleDelete = async (rm: string) => {
-    if (!confirm("Confirma exclusão do integrante?")) return;
-    setBusy(true);
-    try {
-      await api.deleteIntegrante(rm);
-      setIntegrantes((s) => s.filter((x) => String(x.rm) !== String(rm)));
-    } catch (e) {
-      // se a API não existir, tentamos remover localmente (fallback)
-      setIntegrantes((s) => s.filter((x) => String(x.rm) !== String(rm)));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    setBusy(true);
-    try {
-      if (editing) {
-        const updated = await api.updateIntegrante(String(editing.rm), form as Partial<Integrante>);
-        setIntegrantes((s) => s.map((it) => (String(it.rm) === String(updated.rm) ? updated : it)));
-      } else {
-        const created = await api.createIntegrante(form as Partial<Integrante>);
-        setIntegrantes((s) => [created, ...s]);
-      }
-      setFormOpen(false);
-    } catch (err) {
-      // fallback: aplicar alteração localmente se API não disponível
-      if (editing) {
-        setIntegrantes((s) => s.map((it) => (String(it.rm) === String(editing.rm) ? ({ ...(it as any), ...(form as any) } as Integrante) : it)));
-      } else {
-        const fallback: Integrante = {
-          rm: String(form.rm ?? `tmp-${Date.now()}`),
-          nome: String(form.nome ?? "(Sem nome)"),
-          turma: String(form.turma ?? "(Sem turma)"),
-          avatar: String(form.avatar ?? "/src/assets/img/user1.jpg"),
-          github: form.github,
-          linkedin: form.linkedin,
-          instagram: form.instagram,
-        };
-        setIntegrantes((s) => [fallback, ...s]);
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const faltandoCampos = useMemo(() => {
     return integrantes
@@ -226,17 +158,7 @@ export default function Integrantes() {
         </div>
       )}
 
-      <div className="mb-6 flex items-center justify-between">
-        <div />
-        <div className="flex items-center gap-3">
-          <button
-            onClick={openCreate}
-            className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500"
-          >
-            + Novo integrante
-          </button>
-        </div>
-      </div>
+
 
       {/* Grid */}
       {filtered.length > 0 ? (
@@ -249,8 +171,6 @@ export default function Integrantes() {
             <CardIntegrante
               key={String((i as any)?.rm ?? (i as any)?.nome)}
               data={i}
-              onEdit={openEdit}
-              onDelete={handleDelete}
             />
           ))}
         </ul>
@@ -267,37 +187,7 @@ export default function Integrantes() {
         </div>
       )}
 
-      {/* Form modal (create / edit) */}
-      {formOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <form
-            onSubmit={handleSubmit}
-            className="mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{editing ? "Editar integrante" : "Novo integrante"}</h3>
-              <div className="flex items-center gap-2">
-                {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
-                <button type="button" onClick={() => setFormOpen(false)} className="text-slate-500">Fechar</button>
-              </div>
-            </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <input required value={form.nome ?? ""} onChange={(e) => setForm((s) => ({ ...s, nome: e.target.value }))} placeholder="Nome" className="w-full rounded border border-slate-200 px-3 py-2" />
-              <input required value={form.rm ?? ""} onChange={(e) => setForm((s) => ({ ...s, rm: e.target.value }))} placeholder="RM" className="w-full rounded border border-slate-200 px-3 py-2" />
-              <input required value={form.turma ?? ""} onChange={(e) => setForm((s) => ({ ...s, turma: e.target.value }))} placeholder="Turma" className="w-full rounded border border-slate-200 px-3 py-2" />
-              <input value={form.avatar ?? ""} onChange={(e) => setForm((s) => ({ ...s, avatar: e.target.value }))} placeholder="URL avatar" className="w-full rounded border border-slate-200 px-3 py-2" />
-              <input value={form.github ?? ""} onChange={(e) => setForm((s) => ({ ...s, github: e.target.value }))} placeholder="GitHub" className="w-full rounded border border-slate-200 px-3 py-2" />
-              <input value={form.linkedin ?? ""} onChange={(e) => setForm((s) => ({ ...s, linkedin: e.target.value }))} placeholder="LinkedIn" className="w-full rounded border border-slate-200 px-3 py-2" />
-            </div>
-
-            <div className="mt-4 flex items-center justify-end gap-3">
-              <button type="button" onClick={() => setFormOpen(false)} className="rounded-full border px-4 py-2">Cancelar</button>
-              <button disabled={busy} type="submit" className="rounded-full bg-sky-600 px-4 py-2 text-white">{busy ? 'Salvando...' : 'Salvar'}</button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Animação utilitária local (sem libs) */}
       <style>{`

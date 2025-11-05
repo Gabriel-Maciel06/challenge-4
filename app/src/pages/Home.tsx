@@ -1,6 +1,9 @@
 import { Link } from "react-router-dom";
 import React, { useEffect, useRef, useState } from "react";
 import CardIndicador from "../components/CardIndicador";
+import RiskBadge from "../components/RiskBadge";
+import { listarConsultasAltoRisco, mapConsulta } from "../services/api";
+import type { IConsultaComPaciente } from "../types/consulta";
 
 // IMPORTS das imagens (se elas estão em src/assets/img)
 import javaPng from "../assets/img/java.png";
@@ -43,6 +46,9 @@ export default function Home() {
   const D_SPEED = 40;
   const PAUSE = 1000;
 
+  // Estado para consultas de alto risco
+  const [altoRisco, setAltoRisco] = useState<IConsultaComPaciente[]>([]);
+
   useEffect(() => {
     const current = words.current[wIndex] || "";
 
@@ -70,6 +76,10 @@ export default function Home() {
     const t = setTimeout(() => setPhase("deleting"), PAUSE);
     return () => clearTimeout(t);
   }, [typed, phase, wIndex]);
+
+  useEffect(() => {
+    listarConsultasAltoRisco().then(r => setAltoRisco(r.map(mapConsulta))).catch(console.error);
+  }, []);
 
   return (
     <main className="bg-slate-50">
@@ -115,8 +125,35 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <CardIndicador title="Consultas de hoje" value={12} />
             <CardIndicador title="Confirmadas" value={8} />
-            <CardIndicador title="Risco alto" value={2} />
+            <CardIndicador title="Risco alto" value={altoRisco.length} />
           </div>
+          
+          {/* Lista de consultas de alto risco */}
+          {altoRisco.length > 0 && (
+            <div className="mt-6 rounded-lg bg-white p-4 shadow-md">
+              <h3 className="mb-3 text-lg font-semibold text-gray-800">
+                Consultas de Alto Risco (fonte: /api/consultas/alto-risco)
+              </h3>
+              <div className="space-y-2">
+                {altoRisco.slice(0, 5).map((consulta) => (
+                  <div key={consulta.id} className="flex items-center justify-between border-b border-gray-100 py-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-700">
+                        {consulta.paciente?.nome || `Paciente ID: ${consulta.pacienteId}`}
+                      </span>
+                      <RiskBadge value={consulta.riscoAbsenteismo ?? 0} />
+                    </div>
+                    <Link
+                      to={`/pre-consulta/${consulta.id}`}
+                      className="text-xs font-medium text-sky-700 hover:text-sky-800"
+                    >
+                      Pré-teste
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

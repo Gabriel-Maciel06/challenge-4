@@ -1,4 +1,4 @@
-import { request } from "./api";
+import { request, listarConsultas as _listAll, listarConsultasAltoRisco as _listHigh, confirmarConsulta as _confirm, mapConsulta } from "./api";
 import type { IConsulta, IConsultaComPaciente } from "../types/consulta";
 
 const PREFIX = "/api/consultas";
@@ -32,4 +32,18 @@ export async function excluir(id: number): Promise<void> {
   return request<void>(`${PREFIX}/${id}`, { method: "DELETE" });
 }
 
-export default { listar, buscarPorId, criar, atualizar, excluir };
+export async function listarAltoRisco() {
+  const res = await _listHigh();
+  return res.map(mapConsulta);
+}
+
+export async function listarTudo() {
+  const res = await _listAll();
+  return res.map(mapConsulta);
+}
+
+export async function confirmar(id: number) {
+  return _confirm(id);
+}
+
+export default { listar, buscarPorId, criar, atualizar, excluir, listarAltoRisco, listarTudo, confirmar };

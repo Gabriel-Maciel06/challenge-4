@@ -8,6 +8,7 @@ import IntegranteDetalhe from "../pages/IntegranteDetalhe";
 import Sobre from "../pages/Sobre";
 import FAQ from "../pages/FAQ";
 import Contato from "../pages/Contato";
+import PreConsulta from "../pages/PreConsulta";
 
 export default function AppRoutes() {
   return (
@@ -18,6 +19,7 @@ export default function AppRoutes() {
   <Route path="/consultas" element={<Consultas />} />
   <Route path="/integrantes" element={<Integrantes />} />
   <Route path="/integrantes/:rm" element={<IntegranteDetalhe />} />
+      <Route path="/pre-consulta/:id" element={<PreConsulta />} />
       <Route path="/sobre" element={<Sobre />} />
       <Route path="/faq" element={<FAQ />} />
       <Route path="/contato" element={<Contato />} />

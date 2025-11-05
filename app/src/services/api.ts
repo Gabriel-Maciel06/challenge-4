@@ -50,4 +50,57 @@ export async function deleteIntegrante(rm: string): Promise<void> {
   return request<void>(`${INTEGRANTES_PREFIX}/${encodeURIComponent(rm)}`, { method: "DELETE" });
 }
 
+// Consultas
+export async function listarConsultas() {
+  return request<import("../types/consulta").ConsultaApi[]>("/api/consultas");
+}
+
+export async function listarConsultasAltoRisco() {
+  return request<import("../types/consulta").ConsultaApi[]>("/api/consultas/alto-risco");
+}
+
+export async function confirmarConsulta(id: number) {
+  return request<{ ok: true }>(`/api/consultas/${id}/confirmar`, { method: "PUT" });
+}
+
+// Notificações
+export async function enviarNotificacao(payload: {
+  consultaId: number;
+  canal: "WHATSAPP" | "SMS" | "EMAIL" | "VOZ";
+  paraCuidador?: boolean;
+}) {
+  return request<{ ok: true }>(`/api/notificacoes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+// Device-check
+export async function enviarDeviceCheck(payload: {
+  consultaId: number;
+  cameraOk: boolean;
+  microfoneOk: boolean;
+  redeOk: boolean;
+}) {
+  return request<{ ok: true; novoRisco?: number }>(`/api/device-check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+// Mapper para converter ConsultaApi → IConsultaComPaciente
+export function mapConsulta(c: import("../types/consulta").ConsultaApi): import("../types/consulta").IConsultaComPaciente {
+  return {
+    id: c.id,
+    pacienteId: c.pacienteId,
+    medicoId: c.medicoId,
+    dataHora: c.dataHora,
+    status: c.status,
+    riscoAbsenteismo: c.risco_absenteismo ?? 0,
+    paciente: c.paciente,
+  };
+}
+
 export default { API_BASE_URL, request, listIntegrantes, getIntegrante, createIntegrante, updateIntegrante, deleteIntegrante };

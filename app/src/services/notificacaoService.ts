@@ -1,4 +1,4 @@
-import { request } from "./api";
+import { request, enviarNotificacao as _send } from "./api";
 import type { INotificacao } from "../types/notificacao";
 
 const PREFIX = "/api/notificacoes";
@@ -31,4 +31,6 @@ export async function excluir(id: number): Promise<void> {
   return request<void>(`${PREFIX}/${id}`, { method: "DELETE" });
 }
 
-export default { listar, buscarPorId, criar, atualizar, excluir };
+export const enviarNotificacao = _send;
+
+export default { listar, buscarPorId, criar, atualizar, excluir, enviarNotificacao };
