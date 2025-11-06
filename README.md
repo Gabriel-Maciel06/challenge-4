@@ -96,6 +96,7 @@ Crie `.env` na pasta `app/` copiando de `.env.example` e ajuste o valor real de 
 - API não responde: confirme se a URL base está correta e sem barra final duplicada.
 - Problemas de CORS: adicione os cabeçalhos de CORS no backend (Access-Control-Allow-Origin: *) durante desenvolvimento.
 - Variável de ambiente não aplicada: redeploy após criar/alterar e confira em `window.import.meta.env` via console.
+- Imagens retornando 404 (ex.: `/src/assets/img/user1.jpg`): não use caminhos absolutos começando com `/src`. Em vez disso, importe a imagem em componentes ou resolva dinamicamente. Este projeto agora usa `resolveAvatar()` em `src/utils/assets.ts` para transformar o nome do arquivo em URL gerada pelo Vite. No JSON (`integrantes.json`) você pode deixar `"/src/assets/img/user1.jpg"` ou apenas `"user1.jpg"`; ambos funcionarão.
 
 ### Pré-visualização local (build)
 
@@ -111,6 +112,7 @@ npm run preview
 - Adicionar um step de CI (GitHub Actions) para rodar `npm run build` em PRs.
 - Criar variáveis separadas para ambiente de produção e preview (`VITE_API_BASE_URL` diferente em cada). 
 - Adicionar monitoramento de erros (ex.: Sentry) antes do deploy público.
+- Movimentar imagens para `public/` se quiser referenciá-las por caminho fixo (`/img/...`) sem import; atualmente preferimos import.meta.glob para hashing e cache ideal.
 
 ## Link do GitHub
 

@@ -1,5 +1,6 @@
 import type { Integrante } from "../types/integrante";
 import { useNavigate } from "react-router-dom";
+import { resolveAvatar } from "../utils/assets";
 
 type Props = {
   data: Integrante;
@@ -14,7 +15,7 @@ export default function CardIntegrante({ data, onEdit, onDelete }: Props) {
     <li className="relative flex flex-col items-center rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       {/* Avatar */}
       <img
-        src={data.avatar}
+        src={resolveAvatar(data.avatar)}
         alt={`Foto de ${data.nome}`}
         loading="lazy"
         decoding="async"

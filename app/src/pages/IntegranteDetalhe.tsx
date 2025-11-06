@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import type { Integrante } from "../types/integrante";
 import data from "../data/integrantes.json";
 import Badge from "../components/Badge";
+import { resolveAvatar } from "../utils/assets";
 
 export default function IntegranteDetalhe() {
   const { rm } = useParams();
@@ -27,7 +28,7 @@ export default function IntegranteDetalhe() {
       <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col items-center gap-6 p-8 text-center sm:flex-row sm:text-left">
           <img
-            src={integrante.avatar}
+            src={resolveAvatar(integrante.avatar)}
             alt={integrante.nome}
             className="h-32 w-32 rounded-full object-cover ring-4 ring-sky-100"
           />
