@@ -67,6 +67,51 @@ Adicione aqui a URL funcional da Vercel quando deployada:
 
 Vercel URL: https://<SEU-PROJETO>.vercel.app
 
+### Guia rápido de publicação (monorepo com diretório `app/`)
+
+1. Crie o repositório no GitHub e faça `git push` de toda a raiz (onde está este README, `vercel.json` e a pasta `app/`).
+2. Acesse o painel da Vercel e clique em "New Project" → selecione o repositório.
+3. Em "Root Directory" escolha `app` (já que o `package.json` está dentro de `app/`).
+4. Confirme ou ajuste as configurações:
+   - Build Command: `npm run build`
+   - Install Command: `npm install`
+   - Output Directory: `dist`
+   - Framework Preset: `Vite`
+5. Em Environment Variables, adicione:
+   - `VITE_API_BASE_URL=https://SUA-API-JAVA.EXEMPLO` (troque pelo endpoint real)
+6. Deploy.
+7. Teste a URL gerada e valide chamadas à API (abra o DevTools → Network). Se falhar por CORS, ajuste o backend.
+
+### Arquivo `vercel.json`
+
+Incluímos um `vercel.json` simplificado na raiz. Em alguns casos de monorepo ele pode ser ignorado se você define o root diretamente no painel. Se quiser remover, basta excluir e configurar manualmente.
+
+### Ambiente local
+
+Crie `.env` na pasta `app/` copiando de `.env.example` e ajuste o valor real de `VITE_API_BASE_URL`.
+
+### Erros comuns
+
+- 404 após deploy: verifique se o "Root Directory" está em `app`, não na raiz.
+- API não responde: confirme se a URL base está correta e sem barra final duplicada.
+- Problemas de CORS: adicione os cabeçalhos de CORS no backend (Access-Control-Allow-Origin: *) durante desenvolvimento.
+- Variável de ambiente não aplicada: redeploy após criar/alterar e confira em `window.import.meta.env` via console.
+
+### Pré-visualização local (build)
+
+```bash
+cd app
+npm install
+npm run build
+npm run preview
+```
+
+### Próximos passos opcionais
+
+- Adicionar um step de CI (GitHub Actions) para rodar `npm run build` em PRs.
+- Criar variáveis separadas para ambiente de produção e preview (`VITE_API_BASE_URL` diferente em cada). 
+- Adicionar monitoramento de erros (ex.: Sentry) antes do deploy público.
+
 ## Link do GitHub
 
 Coloque aqui o link do repositório no GitHub (obrigatório):
