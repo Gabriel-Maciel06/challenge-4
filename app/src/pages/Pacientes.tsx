@@ -6,6 +6,7 @@ import Loading from "../components/Loading";
 import FormPaciente from "../components/FormPaciente";
 import Alert from "../components/Alert";
 import { useToast } from "../components/Toast";
+import Badge from "../components/Badge";
 
 export default function Pacientes() {
   const [pacientes, setPacientes] = useState<IPaciente[]>([]);
@@ -80,7 +81,10 @@ export default function Pacientes() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Pacientes</h1>
+        <h1 className="text-2xl font-semibold">
+          Pacientes
+          <span className="ml-2 align-middle"><Badge variant="equipe">Perfil: Equipe da clínica</Badge></span>
+        </h1>
         <div className="flex gap-2">
           <button onClick={() => setShowForm((s) => !s)} className="rounded bg-blue-600 text-white px-4 py-2">{showForm ? "Fechar" : "Novo"}</button>
         </div>
@@ -127,6 +131,14 @@ export default function Pacientes() {
                       <div className="text-sm text-slate-500">Canal</div>
                       <div className="text-sm">{p.canalPreferido || '-'}</div>
                     </div>
+                    <div>
+                      <div className="text-sm text-slate-500">Cuidador</div>
+                      <div className="text-sm">{p.cuidadorNome || '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-500">Tel. cuidador</div>
+                      <div className="text-sm">{p.cuidadorTelefone || '-'}</div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -141,6 +153,8 @@ export default function Pacientes() {
                     <th className="px-3 py-2 text-left text-sm font-medium">Nome</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Telefone</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Canal</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Cuidador</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Tel. cuidador</th>
                     <th className="px-3 py-2 text-right text-sm font-medium">Ações</th>
                   </tr>
                 </thead>
@@ -151,6 +165,8 @@ export default function Pacientes() {
                       <td className="px-3 py-2 text-sm">{p.nome}</td>
                       <td className="px-3 py-2 text-sm">{p.telefone || "-"}</td>
                       <td className="px-3 py-2 text-sm">{p.canalPreferido || "-"}</td>
+                      <td className="px-3 py-2 text-sm">{p.cuidadorNome || '-'}</td>
+                      <td className="px-3 py-2 text-sm">{p.cuidadorTelefone || '-'}</td>
                       <td className="px-3 py-2 text-sm text-right space-x-2">
                         <button onClick={() => navigate(`/pacientes/${p.id}`)} className="rounded border px-3 py-1">Editar</button>
                         <button onClick={() => navigate(`/consultas?paciente=${p.id}`)} className="rounded bg-blue-600 text-white px-3 py-1">Agendar</button>

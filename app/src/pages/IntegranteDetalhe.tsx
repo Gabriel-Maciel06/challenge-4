@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import type { Integrante } from "../types/integrante";
 import data from "../data/integrantes.json";
+import Badge from "../components/Badge";
 
 export default function IntegranteDetalhe() {
   const { rm } = useParams();
@@ -34,6 +35,7 @@ export default function IntegranteDetalhe() {
           <div className="flex-1 space-y-3">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               {integrante.nome}
+              <span className="ml-2 align-middle"><Badge variant="publico">Público</Badge></span>
             </h1>
             <p className="text-slate-600">
               <span className="font-medium">RM:</span> {integrante.rm} <br />

@@ -6,6 +6,7 @@ import Loading from "../components/Loading";
 import Alert from "../components/Alert";
 import FormPaciente from "../components/FormPaciente";
 import { useToast } from "../components/Toast";
+import Badge from "../components/Badge";
 
 export default function PacienteDetalhe() {
   const { id } = useParams();
@@ -51,7 +52,10 @@ export default function PacienteDetalhe() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Detalhe do Paciente</h1>
+      <h1 className="text-2xl font-semibold">
+        Detalhe do Paciente
+        <span className="ml-2 align-middle"><Badge variant="equipe">Perfil: Equipe da clínica</Badge></span>
+      </h1>
       <div className="mt-4">
         {loading && <Loading />}
         {error && <Alert tipo="error" mensagem={error} />}

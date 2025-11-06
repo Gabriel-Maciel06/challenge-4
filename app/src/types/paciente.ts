@@ -5,6 +5,8 @@ export interface IPaciente {
   nome: string;
   telefone?: string;
   canalPreferido?: CanalPreferido;
+  cuidadorNome?: string;
+  cuidadorTelefone?: string;
 }
 
 export type PacienteCreate = Omit<IPaciente, "id">;

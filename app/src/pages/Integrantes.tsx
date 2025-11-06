@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Integrante } from "../types/integrante";
 import data from "../data/integrantes.json";
 import CardIntegrante from "../components/CardIntegrante";
+import Badge from "../components/Badge";
 // Integração com API removida por solicitação: usamos apenas o arquivo local integrantes.json
 
 type SortKey = "nome" | "rm"; // <-- sem 'turma'
@@ -63,6 +64,7 @@ export default function Integrantes() {
           <span className="bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
             Integrantes
           </span>
+          <span className="ml-2 align-middle"><Badge variant="publico">Público</Badge></span>
         </h1>
         <p className="mt-2 text-sm text-slate-600">
           Equipe do projeto e suas informações básicas.

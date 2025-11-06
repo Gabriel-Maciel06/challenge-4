@@ -38,12 +38,16 @@ function mapFromApi(p: PacienteApi | PacienteApiCamel | Record<string, any>): IP
   const nome = norm["nmpaciente"] ?? norm["nome"] ?? (p as any).nm_paciente ?? (p as any).nmPaciente;
   const telefone = norm["dstelefone"] ?? norm["telefone"] ?? (p as any).ds_telefone ?? (p as any).dsTelefone;
   const canal = norm["dscanalpref"] ?? norm["canalpreferido"] ?? norm["canal"] ?? (p as any).ds_canal_pref ?? (p as any).dsCanalPref;
+  const cuidadorNome = norm["nmcuidador"] ?? (p as any).nm_cuidador ?? (p as any).nmCuidador;
+  const cuidadorTelefone = norm["dstelcuidador"] ?? (p as any).ds_tel_cuidador ?? (p as any).dsTelCuidador;
 
   return {
     id,
     nome,
     telefone: telefone || undefined,
     canalPreferido: (canal || undefined) as IPaciente["canalPreferido"],
+    cuidadorNome: cuidadorNome || undefined,
+    cuidadorTelefone: cuidadorTelefone || undefined,
   };
 }
 
@@ -55,16 +59,16 @@ function mapToApi(payload: Partial<PacienteCreate>) {
     nm_paciente: payload.nome,
     ds_telefone: payload.telefone ?? null,
     ds_canal_pref: payload.canalPreferido ?? null,
-    nm_cuidador: null,
-    ds_tel_cuidador: null,
+  nm_cuidador: payload.cuidadorNome ?? null,
+  ds_tel_cuidador: payload.cuidadorTelefone ?? null,
     vl_total_faltas: 0,
 
     // camelCase
     nmPaciente: payload.nome,
     dsTelefone: payload.telefone ?? null,
     dsCanalPref: payload.canalPreferido ?? null,
-    nmCuidador: null,
-    dsTelCuidador: null,
+  nmCuidador: payload.cuidadorNome ?? null,
+  dsTelCuidador: payload.cuidadorTelefone ?? null,
     vlTotalFaltas: 0,
   };
   return body;

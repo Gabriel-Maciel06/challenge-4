@@ -32,7 +32,8 @@ export async function listarConsultasAltoRisco() {
 }
 
 export async function confirmarConsulta(id: number) {
-  return request<{ ok: true }>(`/api/consultas/${id}/confirmar`, { method: "PUT" });
+  // Novo contrato do backend: POST /api/consultas/{id}/confirmar retorna a consulta atualizada
+  return request<import("../types/consulta").ConsultaApi>(`/api/consultas/${id}/confirmar`, { method: "POST" });
 }
 
 // Notificações
@@ -104,17 +105,29 @@ export async function enviarDeviceCheck(payload: {
   });
 }
 
-// Mapper para converter ConsultaApi → IConsultaComPaciente
-export function mapConsulta(c: import("../types/consulta").ConsultaApi): import("../types/consulta").IConsultaComPaciente {
+// Mapper tolerante para converter objetos de consulta vindos do backend
+// Aceita diferentes convenções de nomes (idConsulta/id_consulta, dtConsulta, stConsulta, vlRiscoAbs, risco_absenteismo, etc.)
+export function mapConsulta(c: any): import("../types/consulta").IConsultaComPaciente {
+  const norm: Record<string, any> = {};
+  Object.keys(c || {}).forEach((k) => (norm[k.replace(/_/g, "").toLowerCase()] = (c as any)[k]));
+
+  const id = norm["id"] ?? norm["idconsulta"] ?? c?.id ?? c?.idConsulta;
+  const pacienteId = norm["pacienteid"] ?? norm["idpaciente"] ?? c?.pacienteId ?? c?.idPaciente;
+  const medicoId = norm["medicoid"] ?? norm["idmedico"] ?? c?.medicoId ?? c?.idMedico;
+  const dataHora = norm["datahora"] ?? norm["dtconsulta"] ?? c?.dataHora ?? c?.dtConsulta;
+  const status = norm["status"] ?? norm["stconsulta"] ?? c?.status ?? c?.stConsulta;
+  const risco = norm["riscoabsenteismo"] ?? norm["vlriscoabs"] ?? (c as any)?.risco_absenteismo ?? c?.riscoAbsenteismo ?? 0;
+  const paciente = c?.paciente; // caso venha aninhado
+
   return {
-    id: c.id,
-    pacienteId: c.pacienteId,
-    medicoId: c.medicoId,
-    dataHora: c.dataHora,
-    status: c.status,
-    riscoAbsenteismo: c.risco_absenteismo ?? 0,
-    paciente: c.paciente,
-  };
+    id,
+    pacienteId,
+    medicoId,
+    dataHora,
+    status,
+    riscoAbsenteismo: typeof risco === "number" ? risco : Number(risco) || 0,
+    paciente,
+  } as import("../types/consulta").IConsultaComPaciente;
 }
 
 export default { API_BASE_URL, request };

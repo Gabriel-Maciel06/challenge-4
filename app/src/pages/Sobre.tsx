@@ -1,3 +1,5 @@
+import Badge from "../components/Badge";
+
 export default function Sobre() {
   return (
     <main className="bg-gradient-to-b from-slate-50 to-white">
@@ -6,6 +8,7 @@ export default function Sobre() {
         <header className="text-center">
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             Nossa Solução
+            <span className="ml-2 align-middle"><Badge variant="publico">Público</Badge></span>
           </h1>
           <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
             Transformamos um desafio real em uma solução intuitiva e poderosa — pensada para quem mais importa: o usuário.

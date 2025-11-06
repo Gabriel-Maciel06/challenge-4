@@ -10,6 +10,7 @@ import RiskBadge from "../components/RiskBadge";
 import { formatDateTime } from "../utils/formatters";
 import { Link, useSearchParams } from "react-router-dom";
 import { useToast } from "../components/Toast";
+import Badge from "../components/Badge";
 
 export default function Consultas() {
   const [consultas, setConsultas] = useState<IConsultaComPaciente[]>([]);
@@ -134,10 +135,35 @@ export default function Consultas() {
   const end = Math.min(start + pageSize, total);
   const pagina = consultas.slice(start, end);
 
+  type Precheck = {
+    at: number;
+    status: "OK" | "PENDENTE" | "FALHOU";
+    cameraOk?: boolean;
+    microfoneOk?: boolean;
+    redeOk?: boolean;
+  };
+
+  function getPrecheck(consultaId: number): Precheck | null {
+    try {
+      if (typeof window === "undefined") return null;
+      const raw = localStorage.getItem(`precheck-${consultaId}`);
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (!d || typeof d.at !== "number") return null;
+      const status = d.status === "OK" || d.status === "FALHOU" ? d.status : "PENDENTE";
+      return { at: d.at, status, cameraOk: d.cameraOk, microfoneOk: d.microfoneOk, redeOk: d.redeOk };
+    } catch {
+      return null;
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Consultas</h1>
+        <h1 className="text-2xl font-semibold">
+          Consultas
+          <span className="ml-2 align-middle"><Badge variant="equipe">Perfil: Equipe da clínica</Badge></span>
+        </h1>
         <div className="flex gap-2">
           <button onClick={() => setShowForm((s) => !s)} className="rounded bg-blue-600 text-white px-4 py-2">{showForm ? "Fechar" : "Agendar"}</button>
         </div>
@@ -178,6 +204,26 @@ export default function Consultas() {
                     <RiskBadge value={c.riscoAbsenteismo ?? 0} />
                   </div>
                   <div className="mt-1 text-sm text-slate-600">{formatDateTime(c.dataHora)}</div>
+                  <div className="mt-1 text-xs">
+                    {(() => {
+                      const pc = getPrecheck(c.id);
+                      if (!pc || pc.status === "PENDENTE") {
+                        return <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-slate-700">Pré-teste pendente</span>;
+                      }
+                      if (pc.status === "FALHOU") {
+                        const fails: string[] = [];
+                        if (pc.cameraOk === false) fails.push("Câmera");
+                        if (pc.microfoneOk === false) fails.push("Microfone");
+                        if (pc.redeOk === false) fails.push("Conexão");
+                        return (
+                          <span className="inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-red-800">
+                            Falhou{fails.length ? `: ${fails.join(", ")}` : ""}
+                          </span>
+                        );
+                      }
+                      return <span className="inline-flex items-center gap-1 rounded bg-green-100 px-2 py-0.5 text-green-800">Pré-teste OK</span>;
+                    })()}
+                  </div>
                   {c.paciente && (
                     <div className="mt-1 text-xs text-slate-600">
                       {c.paciente.telefone && <span className="mr-2">📞 {c.paciente.telefone}</span>}
@@ -208,6 +254,7 @@ export default function Consultas() {
                     <th className="px-3 py-2 text-left text-sm font-medium">Data/Hora</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Status</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Risco</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Pré-teste</th>
                     <th className="px-3 py-2 text-left text-sm font-medium">Ações</th>
                   </tr>
                 </thead>
@@ -232,6 +279,33 @@ export default function Consultas() {
                       <td className="px-3 py-2 text-sm">{c.status}</td>
                       <td className="px-3 py-2 text-sm">
                         <RiskBadge value={c.riscoAbsenteismo ?? 0} />
+                      </td>
+                      <td className="px-3 py-2 text-sm">
+                        {(() => {
+                          const pc = getPrecheck(c.id);
+                          if (!pc || pc.status === "PENDENTE") {
+                            return <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-slate-700">Pendente</span>;
+                          }
+                          if (pc.status === "FALHOU") {
+                            const items = [
+                              { key: "cam", show: pc.cameraOk === false, label: "Câmera" },
+                              { key: "mic", show: pc.microfoneOk === false, label: "Microfone" },
+                              { key: "net", show: pc.redeOk === false, label: "Conexão" },
+                            ];
+                            const fails = items.filter((i) => i.show);
+                            return (
+                              <div className="flex flex-wrap gap-1">
+                                {fails.length > 0
+                                  ? fails.map((i) => (
+                                      <span key={i.key} className="rounded bg-red-100 px-2 py-0.5 text-red-800">{i.label}</span>
+                                    ))
+                                  : <span className="rounded bg-red-100 px-2 py-0.5 text-red-800">Falhou</span>
+                                }
+                              </div>
+                            );
+                          }
+                          return <span className="inline-flex items-center gap-1 rounded bg-green-100 px-2 py-0.5 text-green-800">OK</span>;
+                        })()}
                       </td>
                       <td className="px-3 py-2 text-sm">
                         <div className="flex gap-2">

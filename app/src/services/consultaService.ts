@@ -1,4 +1,4 @@
-import { request, listarConsultas as _listAll, listarConsultasAltoRisco as _listHigh, mapConsulta } from "./api";
+import { request, listarConsultas as _listAll, listarConsultasAltoRisco as _listHigh, mapConsulta, confirmarConsulta as _confirmApi } from "./api";
 import type { IConsulta, IConsultaComPaciente } from "../types/consulta";
 
 const PREFIX = "/api/consultas";
@@ -100,18 +100,46 @@ export async function listarTudo() {
 }
 
 export async function confirmar(c: IConsulta | IConsultaComPaciente) {
-  // Fazemos um PUT de atualização do status para CONFIRMADA enviando todos os campos necessários
-  const raw = c.dataHora || "";
-  const normalized = raw && raw.length === 16 && raw.includes("T") ? `${raw}:00` : raw;
-  const body: Partial<IConsulta> & any = {
-    pacienteId: c.pacienteId,
-    medicoId: c.medicoId,
-    dataHora: normalized || c.dataHora,
-    status: "CONFIRMADA",
-    riscoAbsenteismo: c.riscoAbsenteismo ?? 0,
-    dsTipo: (c as any).dsTipo ?? "ONLINE",
-  };
-  return atualizar(c.id, body);
+  // Preferimos o novo endpoint do backend: POST /api/consultas/{id}/confirmar
+  try {
+    const updated = await _confirmApi(c.id);
+    // Tenta mapear usando mapConsulta (formato esperado) ou um normalizador tolerante
+    try {
+      return mapConsulta(updated as any);
+    } catch {
+      return mapAnyConsulta(updated as any);
+    }
+  } catch (e) {
+    // Fallback: PUT /api/consultas/{id} com status CONFIRMADA
+    const raw = c.dataHora || "";
+    const normalized = raw && raw.length === 16 && raw.includes("T") ? `${raw}:00` : raw;
+    const body: Partial<IConsulta> & any = {
+      pacienteId: c.pacienteId,
+      medicoId: c.medicoId,
+      dataHora: normalized || c.dataHora,
+      status: "CONFIRMADA",
+      riscoAbsenteismo: c.riscoAbsenteismo ?? 0,
+      dsTipo: (c as any).dsTipo ?? "ONLINE",
+    };
+    return atualizar(c.id, body);
+  }
+}
+
+// Normalizador tolerante a diferentes convenções de campo (idConsulta/id_consulta etc.)
+function mapAnyConsulta(c: any): IConsultaComPaciente {
+  const norm: Record<string, any> = {};
+  Object.keys(c || {}).forEach((k) => (norm[k.replace(/_/g, "").toLowerCase()] = c[k]));
+  // Alguns backends retornam paciente embutido com chaves variadas; preserva se vier
+  const paciente = c?.paciente ?? c?.Paciente ?? c?.PACIENTE;
+  return {
+    id: norm["id"] ?? norm["idconsulta"] ?? c?.id ?? c?.idConsulta,
+    pacienteId: norm["pacienteid"] ?? norm["idpaciente"] ?? c?.pacienteId ?? c?.idPaciente,
+    medicoId: norm["medicoid"] ?? norm["idmedico"] ?? c?.medicoId ?? c?.idMedico,
+    dataHora: norm["datahora"] ?? norm["dtconsulta"] ?? c?.dataHora ?? c?.dtConsulta,
+    status: (norm["status"] ?? norm["stconsulta"] ?? c?.status ?? c?.stConsulta) as any,
+    riscoAbsenteismo: norm["riscoabsenteismo"] ?? norm["vlriscoabs"] ?? c?.riscoAbsenteismo ?? c?.vlRiscoAbs ?? 0,
+    paciente,
+  } as IConsultaComPaciente;
 }
 
 export default { listar, buscarPorId, criar, atualizar, excluir, listarAltoRisco, listarTudo, confirmar };

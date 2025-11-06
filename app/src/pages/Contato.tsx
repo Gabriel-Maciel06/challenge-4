@@ -1,10 +1,11 @@
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from 'react-hook-form';
-import { useState } from "react";
+// import { useState } from "react";
 import Input from "../components/Input";
 import Textarea from "../components/Textarea";
 import Button from "../components/Button";
 import { useToast } from "../components/Toast";
+import Badge from "../components/Badge";
 
 type FormContato = {
   nome: string;
@@ -15,13 +16,13 @@ type FormContato = {
 };
 
 export default function Contato() {
-  const [sent, setSent] = useState(false);
+  // Removido banner de sucesso em favor do toast
   const { success, error: errorToast } = useToast();
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting, isSubmitSuccessful },
+    formState: { errors, isSubmitting },
     reset,
   } = useForm<FormContato>({ mode: "onTouched" });
 
@@ -31,7 +32,6 @@ export default function Contato() {
     try {
       // simula envio
       await new Promise((r) => setTimeout(r, 500));
-      setSent(true);
       success("Mensagem enviada com sucesso!");
       reset({ nome: "", email: "", assunto: "", mensagem: "", website: "" });
     } catch (e: any) {
@@ -43,18 +43,13 @@ export default function Contato() {
     <main className="bg-gradient-to-b from-slate-50 to-white">
       <section className="container mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 py-10">
         <header className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Contato</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Contato
+            <span className="ml-2 align-middle"><Badge variant="publico">Público</Badge></span>
+          </h1>
           <p className="mt-1 text-slate-600">Fale com a equipe do projeto.</p>
         </header>
 
-        {sent && isSubmitSuccessful && (
-          <div
-            role="status"
-            className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900"
-          >
-            ✅ Mensagem enviada com sucesso!
-          </div>
-        )}
 
         <form
           onSubmit={handleSubmit(onSubmit)}
