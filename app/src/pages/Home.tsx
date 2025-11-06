@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import CardIndicador from "../components/CardIndicador";
 import RiskBadge from "../components/RiskBadge";
 import { listarConsultasAltoRisco, mapConsulta } from "../services/api";
+import { useToast } from "../components/Toast";
 import type { IConsultaComPaciente } from "../types/consulta";
 
 // IMPORTS das imagens (se elas estão em src/assets/img)
@@ -48,6 +49,7 @@ export default function Home() {
 
   // Estado para consultas de alto risco
   const [altoRisco, setAltoRisco] = useState<IConsultaComPaciente[]>([]);
+  const { error: errorToast } = useToast();
 
   useEffect(() => {
     const current = words.current[wIndex] || "";
@@ -78,7 +80,12 @@ export default function Home() {
   }, [typed, phase, wIndex]);
 
   useEffect(() => {
-    listarConsultasAltoRisco().then(r => setAltoRisco(r.map(mapConsulta))).catch(console.error);
+    listarConsultasAltoRisco()
+      .then((r) => setAltoRisco(r.map(mapConsulta)))
+      .catch((e) => {
+        console.error(e);
+        errorToast("Não foi possível carregar consultas de alto risco");
+      });
   }, []);
 
   return (

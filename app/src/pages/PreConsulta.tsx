@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { enviarDeviceCheck } from "../services/api";
+import { useToast } from "../components/Toast";
 
 export default function PreConsulta() {
   const { id } = useParams();
@@ -8,6 +9,7 @@ export default function PreConsulta() {
   const [microfoneOk, setMicrofoneOk] = useState(false);
   const [redeOk, setRedeOk] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
+  const { success, error: errorToast } = useToast();
 
   useEffect(() => {
     navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
@@ -30,8 +32,11 @@ export default function PreConsulta() {
         redeOk
       });
       setMsg(`Pronto para acessar o HC${result?.novoRisco !== undefined ? ` — novo risco: ${result.novoRisco}%` : ""}`);
+      success("Pré-consulta enviada!");
     } catch (e) {
-      setMsg(`Erro: ${String(e)}`);
+      const msg = `Erro: ${String(e)}`;
+      setMsg(msg);
+      errorToast("Falha ao enviar device-check");
     }
   }
 

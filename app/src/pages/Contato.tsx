@@ -4,6 +4,7 @@ import { useState } from "react";
 import Input from "../components/Input";
 import Textarea from "../components/Textarea";
 import Button from "../components/Button";
+import { useToast } from "../components/Toast";
 
 type FormContato = {
   nome: string;
@@ -15,6 +16,7 @@ type FormContato = {
 
 export default function Contato() {
   const [sent, setSent] = useState(false);
+  const { success, error: errorToast } = useToast();
 
   const {
     register,
@@ -26,10 +28,15 @@ export default function Contato() {
   const onSubmit: SubmitHandler<FormContato> = async (data) => {
     // bloqueia envio se o honeypot tiver sido preenchido
     if (data.website) return;
-    // simula envio
-    await new Promise((r) => setTimeout(r, 500));
-    setSent(true);
-    reset({ nome: "", email: "", assunto: "", mensagem: "", website: "" });
+    try {
+      // simula envio
+      await new Promise((r) => setTimeout(r, 500));
+      setSent(true);
+      success("Mensagem enviada com sucesso!");
+      reset({ nome: "", email: "", assunto: "", mensagem: "", website: "" });
+    } catch (e: any) {
+      errorToast("Falha ao enviar mensagem");
+    }
   };
 
   return (

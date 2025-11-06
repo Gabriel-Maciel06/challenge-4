@@ -9,8 +9,9 @@ export async function request<T>(path: string, opts: RequestInit = {}): Promise<
     let body: any = null;
     try { body = text ? JSON.parse(text) : null; } catch { body = text; }
     if (!res.ok) {
-      const message = (body && body.message) || body || res.statusText;
-      throw new Error(`${res.status} ${res.statusText} - ${message}`);
+      const message = (body && (typeof body === "string" ? body : body.message)) || body || res.statusText;
+      const pretty = typeof message === "string" ? message : JSON.stringify(message);
+      throw new Error(`${res.status} ${res.statusText} - ${pretty}`);
     }
     return body as T;
   } catch (err) {
@@ -19,36 +20,7 @@ export async function request<T>(path: string, opts: RequestInit = {}): Promise<
   }
 }
 
-// --- Compatibilidade com API de 'integrantes' que já existia no template ---
-const INTEGRANTES_PREFIX = "/integrantes";
-
-export async function listIntegrantes<T = any[]>(): Promise<T> {
-  return request<T>(`${INTEGRANTES_PREFIX}`);
-}
-
-export async function getIntegrante<T = any>(rm: string): Promise<T> {
-  return request<T>(`${INTEGRANTES_PREFIX}/${encodeURIComponent(rm)}`);
-}
-
-export async function createIntegrante<T = any>(payload: any): Promise<T> {
-  return request<T>(`${INTEGRANTES_PREFIX}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function updateIntegrante<T = any>(rm: string, payload: any): Promise<T> {
-  return request<T>(`${INTEGRANTES_PREFIX}/${encodeURIComponent(rm)}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function deleteIntegrante(rm: string): Promise<void> {
-  return request<void>(`${INTEGRANTES_PREFIX}/${encodeURIComponent(rm)}`, { method: "DELETE" });
-}
+// Integração com 'integrantes' via API removida: usamos apenas o arquivo local integrantes.json
 
 // Consultas
 export async function listarConsultas() {
@@ -66,13 +38,29 @@ export async function confirmarConsulta(id: number) {
 // Notificações
 export async function enviarNotificacao(payload: {
   consultaId: number;
-  canal: "WHATSAPP" | "SMS" | "EMAIL" | "VOZ";
+  canal: "WHATSAPP" | "SMS" | "EMAIL" | "VOZ" | "LIGACAO";
   paraCuidador?: boolean;
 }) {
+  // Backend Java validou idConsulta e dsCanal; enviamos todas as convenções
+  const body: Record<string, unknown> = {
+    // nomes já usados no front
+    consultaId: payload.consultaId,
+    canal: payload.canal,
+    paraCuidador: payload.paraCuidador ?? false,
+
+    // camelCase esperado pelo backend
+    idConsulta: payload.consultaId,
+    dsCanal: payload.canal,
+
+    // snake_case de fallback
+    id_consulta: payload.consultaId,
+    ds_canal: payload.canal,
+  };
+
   return request<{ ok: true }>(`/api/notificacoes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
 
@@ -83,10 +71,36 @@ export async function enviarDeviceCheck(payload: {
   microfoneOk: boolean;
   redeOk: boolean;
 }) {
+  // Backend espera campos como idConsulta / id_consulta e flags 'S'/'N' para os checks
+  const yesNo = (v: boolean) => (v ? 'S' : 'N');
+  const body: Record<string, unknown> = {
+    // front-friendly
+    consultaId: payload.consultaId,
+    cameraOk: payload.cameraOk,
+    microfoneOk: payload.microfoneOk,
+    redeOk: payload.redeOk,
+
+    // camelCase expected by some backends
+    idConsulta: payload.consultaId,
+    stCameraOk: yesNo(payload.cameraOk),
+    stMicrofoneOk: yesNo(payload.microfoneOk),
+    stConexaoOk: yesNo(payload.redeOk),
+
+    // snake_case fallback
+    id_consulta: payload.consultaId,
+    st_camera_ok: yesNo(payload.cameraOk),
+    st_microfone_ok: yesNo(payload.microfoneOk),
+    st_conexao_ok: yesNo(payload.redeOk),
+
+    // dt_teste: backend pode gerar por conta própria; incluímos timestamp como fallback
+    dtTeste: new Date().toISOString(),
+    dt_teste: new Date().toISOString(),
+  };
+
   return request<{ ok: true; novoRisco?: number }>(`/api/device-check`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 }
 
@@ -103,4 +117,4 @@ export function mapConsulta(c: import("../types/consulta").ConsultaApi): import(
   };
 }
 
-export default { API_BASE_URL, request, listIntegrantes, getIntegrante, createIntegrante, updateIntegrante, deleteIntegrante };
+export default { API_BASE_URL, request };

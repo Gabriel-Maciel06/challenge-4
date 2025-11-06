@@ -27,7 +27,7 @@ export default function FormPaciente({ initial = {}, onCancel, onSave }: Props) 
     <form onSubmit={submit} className="space-y-3">
       <div>
         <label className="block text-sm font-medium">Nome</label>
-        <input value={nome} onChange={(e) => setNome(e.target.value)} className="mt-1 block w-full rounded border px-3 py-2" />
+        <input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1 block w-full rounded border px-3 py-2" />
       </div>
       <div>
         <label className="block text-sm font-medium">Telefone</label>

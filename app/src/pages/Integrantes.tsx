@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Integrante } from "../types/integrante";
 import data from "../data/integrantes.json";
 import CardIntegrante from "../components/CardIntegrante";
-import * as api from "../services/api";
+// Integração com API removida por solicitação: usamos apenas o arquivo local integrantes.json
 
 type SortKey = "nome" | "rm"; // <-- sem 'turma'
 
@@ -13,24 +13,10 @@ export default function Integrantes() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Tenta buscar do backend; se falhar, usa o arquivo local como fallback.
-    let mounted = true;
-    async function load() {
-      setLoading(true);
-      try {
-        const res = await api.listIntegrantes();
-        if (mounted) setIntegrantes(res || (data as Integrante[]));
-      } catch (err: any) {
-        // fallback - usa dados locais silenciosamente
-        if (mounted) setIntegrantes(data as Integrante[]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      mounted = false;
-    };
+    // Usa somente o arquivo local
+    setLoading(true);
+    setIntegrantes(data as Integrante[]);
+    setLoading(false);
   }, []);
 
 

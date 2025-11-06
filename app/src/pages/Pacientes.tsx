@@ -3,15 +3,19 @@ import { useNavigate } from "react-router-dom";
 import pacienteService from "../services/pacienteService";
 import type { IPaciente } from "../types/paciente";
 import Loading from "../components/Loading";
-import Alert from "../components/Alert";
 import FormPaciente from "../components/FormPaciente";
+import Alert from "../components/Alert";
+import { useToast } from "../components/Toast";
 
 export default function Pacientes() {
   const [pacientes, setPacientes] = useState<IPaciente[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
   const navigate = useNavigate();
+  const { success, error: errorToast } = useToast();
 
   async function load() {
     setLoading(true);
@@ -19,9 +23,11 @@ export default function Pacientes() {
     try {
       const data = await pacienteService.listar();
       setPacientes(data || []);
+      setPage(1);
     } catch (err: any) {
       console.error(err);
       setError("Não foi possível carregar pacientes");
+      errorToast("Não foi possível carregar pacientes");
     } finally {
       setLoading(false);
     }
@@ -31,14 +37,45 @@ export default function Pacientes() {
 
   async function handleCreate(payload: Partial<IPaciente>) {
     try {
-      const novo = await pacienteService.criar(payload as any);
-      setPacientes((s) => [novo, ...s]);
+      await pacienteService.criar(payload as any);
+      await load(); // recarrega da API para garantir IDs reais vindos do banco
       setShowForm(false);
-    } catch (err) {
+      success("Paciente criado com sucesso!");
+    } catch (err: any) {
       console.error(err);
-      setError("Erro ao criar paciente");
+      const msg = err?.message || "Erro ao criar paciente";
+      setError(msg);
+      errorToast(msg);
     }
   }
+
+  async function handleDelete(id: number) {
+    const confirmar = window.confirm("Deseja realmente excluir este paciente?");
+    if (!confirmar) return;
+    try {
+      await pacienteService.excluir(id);
+      setPacientes((s) => {
+        const filtered = s.filter((p) => p.id !== id);
+        const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+        if (page > totalPages) setPage(totalPages);
+        return filtered;
+      });
+      success("Paciente excluído");
+    } catch (err: any) {
+      console.error(err);
+      const msg = err?.message || "Erro ao excluir paciente";
+      setError(msg);
+      errorToast(msg);
+    }
+  }
+
+  // Dados paginados (client-side)
+  const total = pacientes.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const end = Math.min(start + pageSize, total);
+  const pagina = pacientes.slice(start, end);
 
   return (
     <div>
@@ -60,32 +97,102 @@ export default function Pacientes() {
         {error && <Alert tipo="error" mensagem={error} />}
 
         {!loading && !error && (
-          <div className="overflow-x-auto mt-4">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-3 py-2 text-left text-sm font-medium">ID</th>
-                  <th className="px-3 py-2 text-left text-sm font-medium">Nome</th>
-                  <th className="px-3 py-2 text-left text-sm font-medium">Telefone</th>
-                  <th className="px-3 py-2 text-left text-sm font-medium">Canal</th>
-                  <th className="px-3 py-2 text-right text-sm font-medium">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {pacientes.map((p) => (
-                  <tr key={p.id}>
-                    <td className="px-3 py-2 text-sm">{p.id}</td>
-                    <td className="px-3 py-2 text-sm">{p.nome}</td>
-                    <td className="px-3 py-2 text-sm">{p.telefone || "-"}</td>
-                    <td className="px-3 py-2 text-sm">{p.canalPreferido || "-"}</td>
-                    <td className="px-3 py-2 text-sm text-right">
+          <>
+            {/* Lista em cards para telas pequenas */}
+            <div className="mt-4 space-y-3 md:hidden">
+              {pagina.map((p, i) => (
+                <div key={p.id ?? `${p.nome || 'sem-nome'}-${i}`}
+                     className="rounded border bg-white p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm text-slate-500">ID</div>
+                      <div className="text-base font-medium">{p.id}</div>
+                    </div>
+                    <div className="flex gap-2">
                       <button onClick={() => navigate(`/pacientes/${p.id}`)} className="rounded border px-3 py-1">Editar</button>
-                    </td>
+                      <button onClick={() => navigate(`/consultas?paciente=${p.id}`)} className="rounded bg-blue-600 text-white px-3 py-1">Agendar</button>
+                      <button onClick={() => handleDelete(p.id)} className="rounded border border-red-600 text-red-700 px-3 py-1">Excluir</button>
+                    </div>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="text-sm text-slate-500">Nome</div>
+                      <div className="text-sm">{p.nome}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-500">Telefone</div>
+                      <div className="text-sm">{p.telefone || '-'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-slate-500">Canal</div>
+                      <div className="text-sm">{p.canalPreferido || '-'}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabela para md+ */}
+            <div className="overflow-x-auto mt-4 hidden md:block">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-sm font-medium">ID</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Nome</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Telefone</th>
+                    <th className="px-3 py-2 text-left text-sm font-medium">Canal</th>
+                    <th className="px-3 py-2 text-right text-sm font-medium">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {pagina.map((p, i) => (
+                    <tr key={p.id ?? `${p.nome || 'sem-nome'}-${i}` }>
+                      <td className="px-3 py-2 text-sm">{p.id}</td>
+                      <td className="px-3 py-2 text-sm">{p.nome}</td>
+                      <td className="px-3 py-2 text-sm">{p.telefone || "-"}</td>
+                      <td className="px-3 py-2 text-sm">{p.canalPreferido || "-"}</td>
+                      <td className="px-3 py-2 text-sm text-right space-x-2">
+                        <button onClick={() => navigate(`/pacientes/${p.id}`)} className="rounded border px-3 py-1">Editar</button>
+                        <button onClick={() => navigate(`/consultas?paciente=${p.id}`)} className="rounded bg-blue-600 text-white px-3 py-1">Agendar</button>
+                        <button onClick={() => handleDelete(p.id)} className="rounded border border-red-600 text-red-700 px-3 py-1">Excluir</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Controles de paginação */}
+            <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="text-sm text-slate-600">
+                Mostrando {total === 0 ? 0 : start + 1}–{end} de {total}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className="rounded border px-3 py-1 disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >Anterior</button>
+                <div className="text-sm">
+                  Página {currentPage} de {totalPages}
+                </div>
+                <button
+                  className="rounded border px-3 py-1 disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >Próxima</button>
+                <select
+                  className="ml-2 rounded border px-2 py-1 text-sm"
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

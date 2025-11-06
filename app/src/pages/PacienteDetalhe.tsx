@@ -5,6 +5,7 @@ import type { IPaciente } from "../types/paciente";
 import Loading from "../components/Loading";
 import Alert from "../components/Alert";
 import FormPaciente from "../components/FormPaciente";
+import { useToast } from "../components/Toast";
 
 export default function PacienteDetalhe() {
   const { id } = useParams();
@@ -12,6 +13,7 @@ export default function PacienteDetalhe() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { success, error: errorToast } = useToast();
 
   useEffect(() => {
     if (!id) return;
@@ -24,6 +26,7 @@ export default function PacienteDetalhe() {
       } catch (err) {
         console.error(err);
         setError("Não foi possível carregar o paciente");
+        errorToast("Não foi possível carregar o paciente");
       } finally {
         setLoading(false);
       }
@@ -36,10 +39,29 @@ export default function PacienteDetalhe() {
     try {
       const updated = await pacienteService.atualizar(paciente.id, payload);
       setPaciente(updated);
+      success("Paciente atualizado com sucesso!");
       navigate("/pacientes");
     } catch (err) {
       console.error(err);
-      setError("Erro ao atualizar paciente");
+      const msg = (err as any)?.message || "Erro ao atualizar paciente";
+      setError(msg);
+      errorToast(msg);
+    }
+  }
+
+  async function handleDelete() {
+    if (!paciente) return;
+    const confirmar = window.confirm("Deseja realmente excluir este paciente?");
+    if (!confirmar) return;
+    try {
+      await pacienteService.excluir(paciente.id);
+      success("Paciente excluído");
+      navigate("/pacientes");
+    } catch (err) {
+      console.error(err);
+      const msg = (err as any)?.message || "Erro ao excluir paciente";
+      setError(msg);
+      errorToast(msg);
     }
   }
 
@@ -52,6 +74,9 @@ export default function PacienteDetalhe() {
         {paciente && (
           <div className="rounded border bg-white p-4">
             <FormPaciente initial={paciente} onSave={handleSave} onCancel={() => navigate(-1)} />
+            <div className="mt-3">
+              <button onClick={handleDelete} className="rounded border border-red-600 text-red-700 px-4 py-2">Excluir</button>
+            </div>
           </div>
         )}
       </div>
