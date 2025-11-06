@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import consultaService from "../services/consultaService";
+import pacienteService from "../services/pacienteService";
 import notificacaoService from "../services/notificacaoService";
 import type { IConsultaComPaciente } from "../types/consulta";
 import Loading from "../components/Loading";
@@ -31,7 +32,21 @@ export default function Consultas() {
     setError(null);
     try {
       const data = await consultaService.listarTudo();
-      setConsultas(data || []);
+      // Enriquecemos com dados do paciente quando o backend não incluir
+      const precisaPacientes = (data || []).some((c) => !c.paciente);
+      if (precisaPacientes) {
+        try {
+          const pacientes = await pacienteService.listar();
+          const byId = new Map(pacientes.map((p) => [p.id, p] as const));
+          const enriched = (data || []).map((c) => (c.paciente ? c : { ...c, paciente: byId.get(c.pacienteId) }));
+          setConsultas(enriched || []);
+        } catch (e) {
+          // Se falhar o fetch de pacientes, seguimos com as consultas sem exibir ID do paciente
+          setConsultas(data || []);
+        }
+      } else {
+        setConsultas(data || []);
+      }
       setPage(1);
     } catch (err) {
       console.error(err);
@@ -151,20 +166,29 @@ export default function Consultas() {
               {pagina.map((c) => (
                 <div key={c.id} className="rounded border bg-white p-3 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <div className="font-medium">#{c.id} • {c.paciente?.nome ?? c.pacienteId}</div>
+                    <div className="font-medium">
+                      #{c.id} • {c.paciente ? (
+                        <Link className="text-blue-700 hover:underline" to={`/pacientes/${c.pacienteId}`}>
+                          {c.paciente.nome}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-500">Paciente não identificado</span>
+                      )}
+                    </div>
                     <RiskBadge value={c.riscoAbsenteismo ?? 0} />
                   </div>
                   <div className="mt-1 text-sm text-slate-600">{formatDateTime(c.dataHora)}</div>
+                  {c.paciente && (
+                    <div className="mt-1 text-xs text-slate-600">
+                      {c.paciente.telefone && <span className="mr-2">📞 {c.paciente.telefone}</span>}
+                      {c.paciente.canalPreferido && <span className="inline-block rounded bg-slate-100 px-2 py-0.5">{c.paciente.canalPreferido}</span>}
+                    </div>
+                  )}
                   <div className="mt-1 text-sm">Status: {c.status}</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600" onClick={() => abrirNotificacao(c)}>Notificar</button>
                     <div className="flex gap-2">
                       <Link className="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600" to={`/pre-consulta/${c.id}`}>Pré-teste</Link>
-                      <button
-                        className="rounded border px-2 py-1 text-xs"
-                        onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/pre-consulta/${c.id}`)}
-                        title="Copiar link para enviar ao paciente"
-                      >Copiar link</button>
                     </div>
                     {c.status !== "CONFIRMADA" && (
                       <button className="rounded bg-purple-500 px-2 py-1 text-xs text-white hover:bg-purple-600" onClick={() => handleConfirmar(c)}>Confirmar</button>
@@ -191,7 +215,19 @@ export default function Consultas() {
                   {pagina.map((c) => (
                     <tr key={c.id}>
                       <td className="px-3 py-2 text-sm">{c.id}</td>
-                      <td className="px-3 py-2 text-sm">{c.paciente?.nome ?? c.pacienteId}</td>
+                      <td className="px-3 py-2 text-sm">
+                        {c.paciente ? (
+                          <div>
+                            <Link className="text-blue-700 hover:underline" to={`/pacientes/${c.pacienteId}`}>{c.paciente.nome}</Link>
+                            <div className="text-xs text-slate-500">
+                              {c.paciente.telefone && <span className="mr-2">{c.paciente.telefone}</span>}
+                              {c.paciente.canalPreferido && <span className="inline-block rounded bg-slate-100 px-2 py-0.5">{c.paciente.canalPreferido}</span>}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-slate-500">Paciente não identificado</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-sm">{formatDateTime(c.dataHora)}</td>
                       <td className="px-3 py-2 text-sm">{c.status}</td>
                       <td className="px-3 py-2 text-sm">
@@ -212,11 +248,6 @@ export default function Consultas() {
                             >
                               Pré-teste
                             </Link>
-                            <button
-                              className="rounded border px-2 py-1 text-xs"
-                              onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/pre-consulta/${c.id}`)}
-                              title="Copiar link para enviar ao paciente"
-                            >Copiar link</button>
                           </div>
                           {c.status !== "CONFIRMADA" && (
                             <button 

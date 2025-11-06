@@ -49,22 +49,6 @@ export default function PacienteDetalhe() {
     }
   }
 
-  async function handleDelete() {
-    if (!paciente) return;
-    const confirmar = window.confirm("Deseja realmente excluir este paciente?");
-    if (!confirmar) return;
-    try {
-      await pacienteService.excluir(paciente.id);
-      success("Paciente excluído");
-      navigate("/pacientes");
-    } catch (err) {
-      console.error(err);
-      const msg = (err as any)?.message || "Erro ao excluir paciente";
-      setError(msg);
-      errorToast(msg);
-    }
-  }
-
   return (
     <div>
       <h1 className="text-2xl font-semibold">Detalhe do Paciente</h1>
@@ -74,9 +58,6 @@ export default function PacienteDetalhe() {
         {paciente && (
           <div className="rounded border bg-white p-4">
             <FormPaciente initial={paciente} onSave={handleSave} onCancel={() => navigate(-1)} />
-            <div className="mt-3">
-              <button onClick={handleDelete} className="rounded border border-red-600 text-red-700 px-4 py-2">Excluir</button>
-            </div>
           </div>
         )}
       </div>
