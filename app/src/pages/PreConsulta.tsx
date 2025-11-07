@@ -205,23 +205,19 @@ export default function PreConsulta() {
         microfoneOk,
         redeOk: !!redeOk,
       });
-      // Após o envio, buscamos a consulta no backend para refletir o risco persistido (opção 1)
-      let persistedRisk: number | undefined = undefined;
+      // Após o envio, garantimos persistência do risco no backend se necessário (sem exibir na mensagem)
       try {
-        const c = await consultaService.buscarPorId(Number(id));
-        persistedRisk = (c as any)?.riscoAbsenteismo ?? undefined;
+        await consultaService.buscarPorId(Number(id));
       } catch {
         // Se a API não persistiu ainda mas retornou novoRisco, aplicamos um PATCH de compatibilidade
         if (typeof result?.novoRisco === "number") {
           try {
             await consultaService.atualizar(Number(id), { riscoAbsenteismo: result.novoRisco } as any);
-            persistedRisk = result.novoRisco;
           } catch {}
         }
       }
 
-      const effective = persistedRisk ?? result?.novoRisco;
-      setMsg(`Pronto para acessar o HC${effective !== undefined ? ` — risco atualizado: ${effective}%` : ""}`);
+      setMsg("Pronto para acessar o HC");
       success("Pré-consulta enviada!");
       // Persistência local simples
       try {

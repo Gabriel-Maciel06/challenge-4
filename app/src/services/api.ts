@@ -1,5 +1,7 @@
-// API genérica pronta para integração com backend Java
-export const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:8080";
+export const API_BASE_URL =
+  ((import.meta.env as any).VITE_API_BASE_URL as string) ||
+  ((import.meta.env as any).VITE_API_URL as string) ||
+  "http://localhost:8080";
 
 export async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
@@ -15,14 +17,10 @@ export async function request<T>(path: string, opts: RequestInit = {}): Promise<
     }
     return body as T;
   } catch (err) {
-    // rethrow para o consumer tratar
     throw err;
   }
 }
 
-// Integração com 'integrantes' via API removida: usamos apenas o arquivo local integrantes.json
-
-// Consultas
 export async function listarConsultas() {
   return request<import("../types/consulta").ConsultaApi[]>("/api/consultas");
 }
@@ -72,30 +70,15 @@ export async function enviarDeviceCheck(payload: {
   microfoneOk: boolean;
   redeOk: boolean;
 }) {
-  // Backend espera campos como idConsulta / id_consulta e flags 'S'/'N' para os checks
-  const yesNo = (v: boolean) => (v ? 'S' : 'N');
-  const body: Record<string, unknown> = {
-    // front-friendly
-    consultaId: payload.consultaId,
-    cameraOk: payload.cameraOk,
-    microfoneOk: payload.microfoneOk,
-    redeOk: payload.redeOk,
-
-    // camelCase expected by some backends
+  // Backend espera campos em camelCase com 'S'/'N'.
+  // Para evitar erros de propriedades desconhecidas no Jackson, enviamos APENAS os campos esperados.
+  const yesNo = (v: boolean) => (v ? "S" : "N");
+  const body = {
     idConsulta: payload.consultaId,
     stCameraOk: yesNo(payload.cameraOk),
     stMicrofoneOk: yesNo(payload.microfoneOk),
     stConexaoOk: yesNo(payload.redeOk),
-
-    // snake_case fallback
-    id_consulta: payload.consultaId,
-    st_camera_ok: yesNo(payload.cameraOk),
-    st_microfone_ok: yesNo(payload.microfoneOk),
-    st_conexao_ok: yesNo(payload.redeOk),
-
-    // dt_teste: backend pode gerar por conta própria; incluímos timestamp como fallback
     dtTeste: new Date().toISOString(),
-    dt_teste: new Date().toISOString(),
   };
 
   return request<{ ok: true; novoRisco?: number }>(`/api/device-check`, {

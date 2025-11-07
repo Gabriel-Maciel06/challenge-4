@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import CardIndicador from "../components/CardIndicador";
 import RiskBadge from "../components/RiskBadge";
 import { listarConsultasAltoRisco, mapConsulta } from "../services/api";
+import pacienteService from "../services/pacienteService";
 import consultaService from "../services/consultaService";
 import { useToast } from "../components/Toast";
 import type { IConsultaComPaciente } from "../types/consulta";
@@ -90,10 +91,45 @@ export default function Home() {
   }, [typed, phase, wIndex]);
 
   useEffect(() => {
-    // Carrega alto risco (lista)
+    // Carrega alto risco (lista) e enriquece com nome do paciente, caso o backend não retorne embutido
     setLoadingAltoRisco(true);
     listarConsultasAltoRisco()
-      .then((r) => setAltoRisco(r.map(mapConsulta)))
+      .then(async (r) => {
+        const base = r.map(mapConsulta);
+        // Descobre IDs sem nome embutido
+        const missingIds = Array.from(
+          new Set(
+            base
+              .filter((c) => !c?.paciente?.nome && typeof c.pacienteId === "number")
+              .map((c) => c.pacienteId)
+          )
+        );
+        if (missingIds.length === 0) {
+          setAltoRisco(base);
+          return;
+        }
+        try {
+          const fetched = await Promise.all(
+            missingIds.map(async (id) => {
+              try {
+                const p = await pacienteService.buscarPorId(id);
+                return [id, p] as const;
+              } catch {
+                return [id, null] as const;
+              }
+            })
+          );
+          const mapPac = new Map<number, any>(fetched.filter(([, p]) => !!p) as any);
+          const enriched = base.map((c) =>
+            !c.paciente?.nome && mapPac.has(c.pacienteId)
+              ? { ...c, paciente: mapPac.get(c.pacienteId) }
+              : c
+          );
+          setAltoRisco(enriched);
+        } catch {
+          setAltoRisco(base);
+        }
+      })
       .catch((e) => {
         console.error(e);
         errorToast("Não foi possível carregar consultas de alto risco");
@@ -186,25 +222,62 @@ export default function Home() {
             ) : altoRisco.length === 0 ? (
               <p className="text-sm text-slate-600">Nenhuma consulta de alto risco no momento.</p>
             ) : (
-              <div className="space-y-2">
-                {altoRisco.slice(0, 5).map((consulta) => (
-                  <div key={consulta.id} className="flex items-center justify-between border-b border-gray-100 py-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-700">
-                        {consulta.paciente?.nome || `Paciente ID: ${consulta.pacienteId}`}
-                      </span>
-                      <RiskBadge value={consulta.riscoAbsenteismo ?? 0} />
-                      <span className="text-xs text-slate-500 hidden sm:inline">{formatDateTime(consulta.dataHora)}</span>
+              <>
+                {/* Mobile: cartões empilhados */}
+                <div className="md:hidden space-y-3">
+                  {altoRisco.slice(0, 5).map((c) => (
+                    <div key={c.id} className="rounded-lg border border-slate-100 p-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-slate-900">
+                            {c.paciente?.nome || "Paciente não identificado"}
+                          </div>
+                          <div className="mt-0.5 text-xs text-slate-500">{formatDateTime(c.dataHora)}</div>
+                        </div>
+                        <div className="shrink-0"><RiskBadge value={c.riscoAbsenteismo ?? 0} /></div>
+                      </div>
+                      <div className="mt-3 text-right">
+                        <Link to={`/pre-consulta/${c.id}`} className="whitespace-nowrap inline-flex items-center rounded-md border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100 hover:text-sky-800">
+                          Pré-teste
+                        </Link>
+                      </div>
                     </div>
-                    <Link
-                      to={`/pre-consulta/${consulta.id}`}
-                      className="text-xs font-medium text-sky-700 hover:text-sky-800"
-                    >
-                      Pré-teste
-                    </Link>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+
+                {/* Desktop: tabela limpa e compacta */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="min-w-full table-fixed border-separate border-spacing-y-2">
+                    <thead>
+                      <tr>
+                        <th className="w-1/2 px-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Paciente</th>
+                        <th className="w-1/4 px-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Data/Hora</th>
+                        <th className="w-1/6 px-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Risco</th>
+                        <th className="w-[120px] px-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {altoRisco.slice(0, 5).map((c) => (
+                        <tr key={c.id} className="bg-white hover:bg-slate-50 transition-colors">
+                          <td className="rounded-l-lg px-3 py-2 align-middle text-sm text-slate-800">
+                            {c.paciente?.nome || "Paciente não identificado"}
+                          </td>
+                          <td className="px-3 py-2 align-middle text-sm text-slate-600">{formatDateTime(c.dataHora)}</td>
+                          <td className="px-3 py-2 align-middle"><RiskBadge value={c.riscoAbsenteismo ?? 0} /></td>
+                          <td className="rounded-r-lg px-3 py-2 align-middle text-right">
+                            <Link
+                              to={`/pre-consulta/${c.id}`}
+                              className="whitespace-nowrap inline-flex items-center rounded-md border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700 hover:bg-sky-100 hover:text-sky-800"
+                            >
+                              Pré-teste
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>
