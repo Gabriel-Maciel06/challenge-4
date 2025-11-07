@@ -1,6 +1,5 @@
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from 'react-hook-form';
-// import { useState } from "react";
 import Input from "../components/Input";
 import Textarea from "../components/Textarea";
 import Button from "../components/Button";
@@ -16,7 +15,6 @@ type FormContato = {
 };
 
 export default function Contato() {
-  // Removido banner de sucesso em favor do toast
   const { success, error: errorToast } = useToast();
 
   const {
@@ -27,10 +25,8 @@ export default function Contato() {
   } = useForm<FormContato>({ mode: "onTouched" });
 
   const onSubmit: SubmitHandler<FormContato> = async (data) => {
-    // bloqueia envio se o honeypot tiver sido preenchido
     if (data.website) return;
     try {
-      // simula envio
       await new Promise((r) => setTimeout(r, 500));
       success("Mensagem enviada com sucesso!");
       reset({ nome: "", email: "", assunto: "", mensagem: "", website: "" });
@@ -56,7 +52,6 @@ export default function Contato() {
           noValidate
           className="grid max-w-xl gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
         >
-          {/* Honeypot (oculto para humanos) */}
           <input
             type="text"
             tabIndex={-1}
@@ -65,7 +60,6 @@ export default function Contato() {
             className="hidden"
           />
 
-          {/* Nome */}
           <div>
             {(() => {
               const { ref: nomeRef, ...nomeReg } = register("nome", {
@@ -87,7 +81,6 @@ export default function Contato() {
             })()}
           </div>
 
-          {/* Email */}
           <div>
             {(() => {
               const { ref: emailRef, ...emailReg } = register("email", {
@@ -112,7 +105,6 @@ export default function Contato() {
             })()}
           </div>
 
-          {/* Assunto (opcional) */}
           <div>
             {(() => {
               const { ref: assuntoRef, ...assuntoReg } = register("assunto");
@@ -129,7 +121,6 @@ export default function Contato() {
             })()}
           </div>
 
-          {/* Mensagem */}
           <div>
             {(() => {
               const { ref: msgRef, ...msgReg } = register("mensagem", {
@@ -151,7 +142,6 @@ export default function Contato() {
             })()}
           </div>
 
-          {/* Ações */}
           <div className="mt-2 flex items-center gap-3">
             <Button type="submit" variant="primary" loading={isSubmitting} loadingText="Enviando...">
               Enviar
