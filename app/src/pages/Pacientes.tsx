@@ -39,7 +39,7 @@ export default function Pacientes() {
   async function handleCreate(payload: Partial<IPaciente>) {
     try {
       await pacienteService.criar(payload as any);
-      await load(); // recarrega da API para garantir IDs reais vindos do banco
+      await load();
       setShowForm(false);
       success("Paciente criado com sucesso!");
     } catch (err: any) {
@@ -70,7 +70,6 @@ export default function Pacientes() {
     }
   }
 
-  // Dados paginados (client-side)
   const total = pacientes.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -102,7 +101,6 @@ export default function Pacientes() {
 
         {!loading && !error && (
           <>
-            {/* Lista em cards para telas pequenas */}
             <div className="mt-4 space-y-3 md:hidden">
               {pagina.map((p, i) => (
                 <div key={p.id ?? `${p.nome || 'sem-nome'}-${i}`}
@@ -144,7 +142,6 @@ export default function Pacientes() {
               ))}
             </div>
 
-            {/* Tabela para md+ */}
             <div className="overflow-x-auto mt-4 hidden md:block">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
@@ -178,7 +175,6 @@ export default function Pacientes() {
               </table>
             </div>
 
-            {/* Controles de paginação */}
             <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3">
               <div className="text-sm text-slate-600">
                 Mostrando {total === 0 ? 0 : start + 1}–{end} de {total}
