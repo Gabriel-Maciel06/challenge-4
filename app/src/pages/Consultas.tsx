@@ -381,4 +381,5 @@ export default function Consultas() {
       )}
     </div>
   );
+
 }
