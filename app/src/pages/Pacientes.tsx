@@ -4,8 +4,8 @@ import pacienteService from "../services/pacienteService";
 import type { IPaciente } from "../types/paciente";
 import Loading from "../components/Loading";
 import FormPaciente from "../components/FormPaciente";
-import Alert from "../components/Alert";
 import { useToast } from "../components/Toast";
+import { HttpError } from "../services/api";
 import Badge from "../components/Badge";
 
 export default function Pacientes() {
@@ -64,7 +64,14 @@ export default function Pacientes() {
       success("Paciente excluído");
     } catch (err: any) {
       console.error(err);
-      const msg = err?.message || "Erro ao excluir paciente";
+      let msg = err?.message || "Erro ao excluir paciente";
+      // Tratamento mais amigável para erros do backend
+      const http = err as HttpError;
+      const backendMsg = (http as any)?.body?.mensagem || (http as any)?.body?.message;
+      if (backendMsg) msg = backendMsg;
+      if (http?.status === 409) {
+        msg = backendMsg || "Não é possível excluir: paciente possui registros vinculados.";
+      }
       setError(msg);
       errorToast(msg);
     }
@@ -96,8 +103,7 @@ export default function Pacientes() {
           </div>
         )}
 
-        {loading && <Loading />}
-        {error && <Alert tipo="error" mensagem={error} />}
+  {loading && <Loading />}
 
         {!loading && !error && (
           <>
