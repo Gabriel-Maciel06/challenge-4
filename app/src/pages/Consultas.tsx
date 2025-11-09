@@ -4,7 +4,6 @@ import pacienteService from "../services/pacienteService";
 import notificacaoService from "../services/notificacaoService";
 import type { IConsultaComPaciente } from "../types/consulta";
 import Loading from "../components/Loading";
-import Alert from "../components/Alert";
 import FormConsulta from "../components/FormConsulta";
 import RiskBadge from "../components/RiskBadge";
 import { formatDateTime } from "../utils/formatters";
@@ -111,7 +110,7 @@ export default function Consultas() {
   async function handleConfirmar(consulta: IConsultaComPaciente) {
     try {
       await consultaService.confirmar(consulta);
-      await load(); 
+      await load();
       success("Consulta confirmada!");
     } catch (err) {
       console.error(err);
@@ -163,13 +162,13 @@ export default function Consultas() {
       </div>
 
       <div className="mt-4">
-        {error && <Alert tipo="error" mensagem={error} />}
+  {error && null}
 
         {showForm && (
           <div className="mb-4 rounded border bg-white p-4">
-            <FormConsulta 
-              onSave={handleCreate} 
-              onCancel={() => setShowForm(false)} 
+            <FormConsulta
+              onSave={handleCreate}
+              onCancel={() => setShowForm(false)}
               initial={{ pacienteId: searchParams.get("paciente") ? Number(searchParams.get("paciente")) : undefined }}
             />
           </div>
@@ -299,14 +298,14 @@ export default function Consultas() {
                       </td>
                       <td className="px-3 py-2 text-sm">
                         <div className="flex gap-2">
-                          <button 
+                          <button
                             className="rounded bg-blue-500 px-2 py-1 text-xs text-white hover:bg-blue-600"
                             onClick={() => abrirNotificacao(c)}
                           >
                             Notificar
                           </button>
                           <div className="flex items-center gap-2">
-                            <Link 
+                            <Link
                             className="rounded bg-green-500 px-2 py-1 text-xs text-white hover:bg-green-600"
                             to={`/pre-consulta/${c.id}`}
                             >
@@ -314,7 +313,7 @@ export default function Consultas() {
                             </Link>
                           </div>
                           {c.status !== "CONFIRMADA" && (
-                            <button 
+                            <button
                               className="rounded bg-purple-500 px-2 py-1 text-xs text-white hover:bg-purple-600"
                               onClick={() => handleConfirmar(c)}
                             >
