@@ -382,4 +382,3 @@ export default function Consultas() {
     </div>
   );
 }
-// fim do código :)
