@@ -65,7 +65,6 @@ export default function Pacientes() {
     } catch (err: any) {
       console.error(err);
       let msg = err?.message || "Erro ao excluir paciente";
-      // Tratamento mais amigável para erros do backend
       const http = err as HttpError;
       const backendMsg = (http as any)?.body?.mensagem || (http as any)?.body?.message;
       if (backendMsg) msg = backendMsg;
